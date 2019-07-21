@@ -1,0 +1,28 @@
+{
+  "name": "generated",
+  "version": "1.0.0",
+  "description": "generated package.json",
+  "main": "index.js",
+  "scripts": {
+    "build": "node ./node_modules/typescript/bin/tsc",
+    "start": "npm install && npm run build && node js/start.js"
+  },
+  "keywords": [
+    "states",
+    "generated code",
+    "bob",
+    "alice",
+    "protocol"
+  ],
+  "author": "jvo",
+  "license": "ISC",
+  "dependencies": {
+    "request": "^2.88.0",
+    "typescript": "^3.5.3",
+    "wait-queue": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^12.0.12",
+    "@types/request": "^2.48.1"
+  }
+}
