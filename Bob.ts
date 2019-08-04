@@ -9,18 +9,17 @@ interface IBob {
 
 interface IBob_S1 extends IBob {
     readonly state: "S1";
-    res?: RES;
-    receive(): Promise<IBob_S2 | IBob_Done>;
+    recv(): Promise<IBob_S2 | IBob_S3>;
 }
 
 interface IBob_S2 extends IBob {
     readonly state: "S2";
     add: ADD;
-    sendRES(res: RES): IBob_S1;
+    sendRES(res: RES): Promise<IBob_S1>;
 }
 
-interface IBob_Done extends IBob {
-    readonly state: "Done";
+interface IBob_S3 extends IBob {
+    readonly state: "S3";
     bye: BYE;
 }
 
@@ -36,10 +35,10 @@ abstract class Bob {
 
 class Bob_S1 extends Bob implements IBob_S1 {
     public readonly state = "S1";
-    constructor(public res?: RES) {
+    constructor() {
         super();
     }
-    async receive(): Promise<IBob_S2 | IBob_Done> {
+    async recv(): Promise<IBob_S2 | IBob_S3> {
         try {
             super.checkOneTransitionPossible();
         }
@@ -54,7 +53,7 @@ class Bob_S1 extends Bob implements IBob_S1 {
                     break;
                 }
                 case BYE.name + roles.alice: {
-                    resolve(new Bob_Done((<BYE>msg)));
+                    resolve(new Bob_S3((<BYE>msg)));
                     break;
                 }
             }
@@ -67,26 +66,26 @@ class Bob_S2 extends Bob implements IBob_S2 {
     constructor(public add: ADD) {
         super();
     }
-    sendRES(res: RES): IBob_S1 {
+    async sendRES(res: RES): Promise<IBob_S1> {
         super.checkOneTransitionPossible();
-        sendMessage(roles.bob, roles.alice, res);
-        return new Bob_S1(res);
+        await sendMessage(roles.bob, roles.alice, res);
+        return new Promise(resolve => resolve(new Bob_S1));
     }
 }
 
-class Bob_Done extends Bob implements IBob_Done {
-    public readonly state = "Done";
+class Bob_S3 extends Bob implements IBob_S3 {
+    public readonly state = "S3";
     constructor(public bye: BYE) {
         super();
         receiveMessageServer.terminate();
     }
 }
 
-export { IBob, IBob_S1, IBob_S2, IBob_Done };
+export { IBob, IBob_S1, IBob_S2, IBob_S3 };
 
-export async function executeProtocol(f: (S1: IBob_S1) => Promise<IBob_Done>, host: string, port: number) {
+export async function executeProtocol(f: (IBob_S1: IBob_S1) => Promise<IBob_S3>, host: string, port: number) {
     console.log(`Bob started ${new Date()}`);
     await initialize(roles.bob, port, host);
     let done = await f(new Bob_S1());
-    return new Promise<IBob_Done>(resolve => resolve(done));
+    return new Promise<IBob_S3>(resolve => resolve(done));
 }

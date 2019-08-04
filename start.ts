@@ -5,10 +5,10 @@ import * as path from 'path';
 function executeNodeProcess(fileName:string){
     console.log(`start executeNodeProcess ${fileName}`);
     const nodeExecutable = `node`;
-    const exeFileName = `${__dirname}\\${fileName}`;
+    const exeFileName = `${__dirname}/${fileName}`;
     const parameters = [exeFileName];
     const exeFileDir = path.dirname(exeFileName);
-    const logFileName=`${exeFileDir}\\..\\log\\${fileName.substr(0,fileName.indexOf('.'))}.log`;
+    const logFileName=`${exeFileDir}/../log/${fileName.substr(0,fileName.indexOf('.'))}.log`;
     child.execFile(nodeExecutable
         , parameters
         , (err,data) => {

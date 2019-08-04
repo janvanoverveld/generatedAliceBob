@@ -113,6 +113,6 @@ export class OneTransitionPossibleException extends Error {
 }
 
 enum roles {
-    alice = "Alice",
-    bob = "Bob"
+    bob = "Bob",
+    alice = "Alice"
 }
