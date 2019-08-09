@@ -1,29 +1,37 @@
 import { receiveMessageServer, waitForMessage } from "./receiveMessageServer";
-import { ADD, BYE, RES } from "./Message";
+import { ADD, BYE, RES, Message, NOMESSAGE } from "./Message";
 import { sendMessage } from "./sendMessage";
 import { roles, initialize, connectedRoles, OneTransitionPossibleException } from "./globalObjects";
 
+enum messages {
+    ADD = "ADD",
+    BYE = "BYE",
+    RES = "RES",
+    NOMESSAGE = "NOMESSAGE"
+}
+
 interface IAlice {
-    state: string;
+    messageFrom: roles;
+    messageType: messages;
+    message: Message;
 }
 
 interface IAlice_S1 extends IAlice {
-    readonly state: "S1";
-    res?: RES;
     sendADD(add: ADD): Promise<IAlice_S2>;
     sendBYE(bye: BYE): Promise<IAlice_S3>;
 }
 
 interface IAlice_S2 extends IAlice {
-    readonly state: "S2";
     recv(): Promise<IAlice_S1>;
 }
 
 interface IAlice_S3 extends IAlice {
-    readonly state: "S3";
 }
 
 abstract class Alice {
+    public messageFrom = roles.alice;
+    public messageType = messages.NOMESSAGE;
+    public message = new NOMESSAGE();
     constructor(protected transitionPossible: boolean = true) { }
     ;
     protected checkOneTransitionPossible() {
@@ -34,9 +42,14 @@ abstract class Alice {
 }
 
 class Alice_S1 extends Alice implements IAlice_S1 {
-    public readonly state = "S1";
-    constructor(public res?: RES) {
+    constructor(messageFrom?: roles, messageType?: messages, message?: Message) {
         super();
+        if (messageFrom)
+            super.messageFrom = messageFrom;
+        if (messageType)
+            super.messageType = messageType;
+        if (message)
+            super.message = message;
     }
     async sendADD(add: ADD): Promise<IAlice_S2> {
         super.checkOneTransitionPossible();
@@ -51,7 +64,6 @@ class Alice_S1 extends Alice implements IAlice_S1 {
 }
 
 class Alice_S2 extends Alice implements IAlice_S2 {
-    public readonly state = "S2";
     constructor() {
         super();
     }
@@ -66,7 +78,7 @@ class Alice_S2 extends Alice implements IAlice_S2 {
         return new Promise(resolve => {
             switch (msg.name + msg.from) {
                 case RES.name + roles.bob: {
-                    resolve(new Alice_S1((<RES>msg)));
+                    resolve(new Alice_S1(msg.from, messages.RES, msg));
                     break;
                 }
             }
@@ -75,18 +87,21 @@ class Alice_S2 extends Alice implements IAlice_S2 {
 }
 
 class Alice_S3 extends Alice implements IAlice_S3 {
-    public readonly state = "S3";
     constructor() {
         super();
         receiveMessageServer.terminate();
     }
 }
 
-export { IAlice, IAlice_S1, IAlice_S2, IAlice_S3 };
+type Alice_Start = IAlice_S1;
+type Alice_End = IAlice_S3;
 
-export async function executeProtocol(f: (IAlice_S1: IAlice_S1) => Promise<IAlice_S3>, host: string, port: number) {
+async function executeProtocol(f: (Alice_Start: Alice_Start) => Promise<Alice_End>, host: string, port: number) {
     console.log(`Alice started ${new Date()}`);
     await initialize(roles.alice, port, host);
     let done = await f(new Alice_S1());
-    return new Promise<IAlice_S3>(resolve => resolve(done));
+    return new Promise<Alice_End>(resolve => resolve(done));
 }
+
+export { IAlice, IAlice_S1, IAlice_S2, IAlice_S3, messages, Alice_Start, Alice_End, executeProtocol, roles };
+

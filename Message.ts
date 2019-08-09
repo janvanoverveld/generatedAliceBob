@@ -1,7 +1,14 @@
 import {connectedRoles,roles} from './globalObjects';
 
 export abstract class Message {
-    constructor(public name:string,public from?:roles){};
+    public from:roles=roles.mediator;
+    constructor(public name:string){};
+}
+
+export class NOMESSAGE extends Message {
+    constructor(){
+        super(NOMESSAGE.name);
+    }
 }
 
 export class ROLEMESSAGE extends Message {
