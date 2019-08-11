@@ -6,17 +6,16 @@ import { roles, initialize, connectedRoles, OneTransitionPossibleException } fro
 enum messages {
     ADD = "ADD",
     BYE = "BYE",
-    RES = "RES",
-    NOMESSAGE = "NOMESSAGE"
+    RES = "RES"
 }
 
 interface IAlice {
-    messageFrom: roles;
-    messageType: messages;
-    message: Message;
 }
 
 interface IAlice_S1 extends IAlice {
+    readonly messageFrom: roles.bob;
+    readonly messageType: messages.RES;
+    message?: RES;
     sendADD(add: ADD): Promise<IAlice_S2>;
     sendBYE(bye: BYE): Promise<IAlice_S3>;
 }
@@ -28,10 +27,7 @@ interface IAlice_S2 extends IAlice {
 interface IAlice_S3 extends IAlice {
 }
 
-abstract class Alice {
-    public messageFrom = roles.alice;
-    public messageType = messages.NOMESSAGE;
-    public message = new NOMESSAGE();
+abstract class Alice implements IAlice {
     constructor(protected transitionPossible: boolean = true) { }
     ;
     protected checkOneTransitionPossible() {
@@ -42,14 +38,10 @@ abstract class Alice {
 }
 
 class Alice_S1 extends Alice implements IAlice_S1 {
-    constructor(messageFrom?: roles, messageType?: messages, message?: Message) {
+    readonly messageFrom = roles.bob;
+    readonly messageType = messages.RES;
+    constructor(public message?: RES) {
         super();
-        if (messageFrom)
-            super.messageFrom = messageFrom;
-        if (messageType)
-            super.messageType = messageType;
-        if (message)
-            super.message = message;
     }
     async sendADD(add: ADD): Promise<IAlice_S2> {
         super.checkOneTransitionPossible();
@@ -78,7 +70,7 @@ class Alice_S2 extends Alice implements IAlice_S2 {
         return new Promise(resolve => {
             switch (msg.name + msg.from) {
                 case RES.name + roles.bob: {
-                    resolve(new Alice_S1(msg.from, messages.RES, msg));
+                    resolve(new Alice_S1((<RES>msg)));
                     break;
                 }
             }
@@ -103,5 +95,5 @@ async function executeProtocol(f: (Alice_Start: Alice_Start) => Promise<Alice_En
     return new Promise<Alice_End>(resolve => resolve(done));
 }
 
-export { IAlice, IAlice_S1, IAlice_S2, IAlice_S3, messages, Alice_Start, Alice_End, executeProtocol, roles };
+export { IAlice, IAlice_S2, messages, Alice_Start, Alice_End, executeProtocol, roles };
 

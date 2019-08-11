@@ -1,5 +1,5 @@
-import {Bob_Start,Bob_End,executeProtocol, IBob_S2, messages, roles} from './Bob';
-import {ADD,RES} from './Message';
+import {Bob_Start,Bob_End,executeProtocol, messages} from './Bob';
+import {RES} from './Message';
 
 async function protocol(s1:Bob_Start):Promise<Bob_End> {
    let nextState = await s1.recv();
@@ -7,11 +7,9 @@ async function protocol(s1:Bob_Start):Promise<Bob_End> {
       console.log(`message ${nextState.messageType} received from ${nextState.messageFrom}`);
       switch (nextState.messageType) {
          case messages.ADD: {
-            const add = <ADD>nextState.message;
-            const res = new RES( add.value1 + add.value2 );
+            const res = new RES( nextState.message.value1 + nextState.message.value2 );
             console.log(`send ${res.name} with ${res.sum}`);
-            const s2 = <IBob_S2>nextState;
-            s1 = await s2.sendRES(res);
+            s1 = await nextState.sendRES(res);
             nextState = await s1.recv();
             break;
          }
