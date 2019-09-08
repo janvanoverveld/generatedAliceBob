@@ -1,8 +1,6 @@
 import * as http from 'http';
 import {Message} from './Message';
-import WaitQueue from 'wait-queue';
-
-const wq = new WaitQueue();
+import {messageDB} from './messageDB';
 
 function httpRestServer(req:http.IncomingMessage,res:http.ServerResponse):void {
    const httpHeaders = {'cache-control':'no-cache','Content-Type':'application/json','charset':'utf-8'};
@@ -10,8 +8,7 @@ function httpRestServer(req:http.IncomingMessage,res:http.ServerResponse):void {
       let postData:string;
       req.on('data', (data) => { postData = (postData===undefined)?data: postData+data; });
       req.on('end',  () => { try { //console.log(`bericht ontvangen  ${postData}`);
-                                   //messageResolver(<Message>(JSON.parse(postData)));
-                                   wq.push(<Message>(JSON.parse(postData)));
+                                   messageDB.add(<Message>(JSON.parse(postData)));
                                    res.writeHead(200, "OK", httpHeaders);
                                    res.end();
                              }
@@ -39,20 +36,6 @@ function terminate(){
 const receiveMessageServer = {
     start: start
 ,   terminate:terminate
-}
-
-//var messageResolver: (msg: Message) => void;
-//export async function waitForMessage():Promise<Message>{
-//    return new Promise(
-//            (resolve) => {
-//                messageResolver = resolve;
-//    });
-//}
-
-export async function waitForMessage():Promise<Message>{
-    const item = await wq.shift();
-    const msg = <Message>item;
-    return new Promise( (resolve) => resolve(msg) );
 }
 
 export {receiveMessageServer};

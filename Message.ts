@@ -5,12 +5,6 @@ export abstract class Message {
     constructor(public name:string){};
 }
 
-export class NOMESSAGE extends Message {
-    constructor(){
-        super(NOMESSAGE.name);
-    }
-}
-
 export class ROLEMESSAGE extends Message {
     public host:string;
     public port:number;
@@ -18,12 +12,6 @@ export class ROLEMESSAGE extends Message {
         super(ROLEMESSAGE.name);
         this.host = connectedRoles.getInfo(roleName).host;
         this.port = connectedRoles.getInfo(roleName).port;
-    }
-}
-
-export class READY extends Message {
-    constructor(){
-        super(READY.name);
     }
 }
 

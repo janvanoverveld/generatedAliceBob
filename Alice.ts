@@ -1,7 +1,8 @@
-import { receiveMessageServer, waitForMessage } from "./receiveMessageServer";
-import { ADD, BYE, RES, Message, NOMESSAGE } from "./Message";
+import { receiveMessageServer } from "./receiveMessageServer";
+import { ADD, BYE, RES, Message } from "./Message";
 import { sendMessage } from "./sendMessage";
 import { roles, initialize, connectedRoles, OneTransitionPossibleException } from "./globalObjects";
+import { messageDB } from "./messageDB";
 
 enum messages {
     ADD = "ADD",
@@ -16,8 +17,8 @@ interface IAlice_S1 extends IAlice {
     readonly messageFrom: roles.bob;
     readonly messageType: messages.RES;
     message?: RES;
-    sendADD(add: ADD): Promise<IAlice_S2>;
-    sendBYE(bye: BYE): Promise<IAlice_S3>;
+    send_ADD_to_Bob(add: ADD): Promise<IAlice_S2>;
+    send_BYE_to_Bob(bye: BYE): Promise<IAlice_S3>;
 }
 
 interface IAlice_S2 extends IAlice {
@@ -43,12 +44,12 @@ class Alice_S1 extends Alice implements IAlice_S1 {
     constructor(public message?: RES) {
         super();
     }
-    async sendADD(add: ADD): Promise<IAlice_S2> {
+    async send_ADD_to_Bob(add: ADD): Promise<IAlice_S2> {
         super.checkOneTransitionPossible();
         await sendMessage(roles.alice, roles.bob, add);
         return new Promise(resolve => resolve(new Alice_S2));
     }
-    async sendBYE(bye: BYE): Promise<IAlice_S3> {
+    async send_BYE_to_Bob(bye: BYE): Promise<IAlice_S3> {
         super.checkOneTransitionPossible();
         await sendMessage(roles.alice, roles.bob, bye);
         return new Promise(resolve => resolve(new Alice_S3));
@@ -66,7 +67,8 @@ class Alice_S2 extends Alice implements IAlice_S2 {
         catch (exc) {
             return new Promise((resolve, reject) => reject(exc));
         }
-        let msg = await waitForMessage();
+        const msgPredicate: (message: Message) => boolean = m => (m.name === RES.name && m.from === roles.bob);
+        const msg = await messageDB.remove(msgPredicate);
         return new Promise(resolve => {
             switch (msg.name + msg.from) {
                 case RES.name + roles.bob: {

@@ -1,7 +1,8 @@
-import { receiveMessageServer, waitForMessage } from "./receiveMessageServer";
-import { ADD, BYE, RES, Message, NOMESSAGE } from "./Message";
+import { receiveMessageServer } from "./receiveMessageServer";
+import { ADD, BYE, RES, Message } from "./Message";
 import { sendMessage } from "./sendMessage";
 import { roles, initialize, connectedRoles, OneTransitionPossibleException } from "./globalObjects";
+import { messageDB } from "./messageDB";
 
 enum messages {
     ADD = "ADD",
@@ -20,7 +21,7 @@ interface IBob_S2 extends IBob {
     readonly messageFrom: roles.alice;
     readonly messageType: messages.ADD;
     message: ADD;
-    sendRES(res: RES): Promise<IBob_S1>;
+    send_RES_to_Alice(res: RES): Promise<IBob_S1>;
 }
 
 interface IBob_S3 extends IBob {
@@ -50,7 +51,8 @@ class Bob_S1 extends Bob implements IBob_S1 {
         catch (exc) {
             return new Promise((resolve, reject) => reject(exc));
         }
-        let msg = await waitForMessage();
+        const msgPredicate: (message: Message) => boolean = m => (m.name === ADD.name && m.from === roles.alice) || (m.name === BYE.name && m.from === roles.alice);
+        const msg = await messageDB.remove(msgPredicate);
         return new Promise(resolve => {
             switch (msg.name + msg.from) {
                 case ADD.name + roles.alice: {
@@ -72,7 +74,7 @@ class Bob_S2 extends Bob implements IBob_S2 {
     constructor(public message: ADD) {
         super();
     }
-    async sendRES(res: RES): Promise<IBob_S1> {
+    async send_RES_to_Alice(res: RES): Promise<IBob_S1> {
         super.checkOneTransitionPossible();
         await sendMessage(roles.bob, roles.alice, res);
         return new Promise(resolve => resolve(new Bob_S1));

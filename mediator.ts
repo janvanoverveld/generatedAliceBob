@@ -1,32 +1,30 @@
-import {receiveMessageServer,waitForMessage} from './receiveMessageServer';
-import {ROLEMESSAGE, READY} from './Message';
+import {receiveMessageServer} from './receiveMessageServer';
+import {ROLEMESSAGE} from './Message';
 import {sendMessage} from './sendMessage';
 import {roles, connectedRoles} from './globalObjects';
+import {messageDB} from './messageDB';
 
 async function initProtocolByMediator(){
     while ( true ) {
-        let msg = await waitForMessage();
+        const msg = await messageDB.remove((m)=>m.name===ROLEMESSAGE.name);
         if ( msg.name = ROLEMESSAGE.name) {
             connectedRoles.save(msg);
         }
 
-        let allRoles = Object.values(roles);
-        let missingRoles = allRoles.filter( (role) => connectedRoles.missing(role) );
+        const allRoles = Object.values(roles);
+        const missingRoles = allRoles.filter( (role) => connectedRoles.missing(role) );
         missingRoles.forEach(  (role) => console.log(`${role} nog niet aanwezig`) );
 
         if ( missingRoles.length > 0){
             continue;
         }
 
-        let relevantRoles = allRoles.filter( (role) => role !== roles.mediator );
+        const relevantRoles = allRoles.filter( (role) => role !== roles.mediator );
 
         for ( let i=0; i<relevantRoles.length; i++ ) {
-            for ( let j=0; j<allRoles.length; j++ ) {
-                await sendMessage( roles.mediator, relevantRoles[i], new ROLEMESSAGE(allRoles[j]) );
+            for ( let j=0; j<relevantRoles.length; j++ ) {
+                if (i!=j) sendMessage( roles.mediator, relevantRoles[i], new ROLEMESSAGE(relevantRoles[j]) );
             }
-        }
-        for ( let i=0; i<relevantRoles.length; i++ ) {
-            await sendMessage( roles.mediator, relevantRoles[i], new READY() );
         }
 
         receiveMessageServer.terminate();

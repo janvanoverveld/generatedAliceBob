@@ -1,6 +1,7 @@
-import {ROLEMESSAGE,Message,READY} from './Message';
-import {receiveMessageServer,waitForMessage} from './receiveMessageServer';
+import {ROLEMESSAGE,Message} from './Message';
+import {receiveMessageServer} from './receiveMessageServer';
 import {sendMessage} from './sendMessage';
+import {messageDB} from './messageDB';
 
 //
 //
@@ -55,10 +56,6 @@ function save(msgOrRoleName:Message|roles,host?:string,port?:number):void{
     }
 }
 
-function noMoreRelevantRoles():boolean {
-    return connectedRolesMap.size < 3;
-}
-
 function del(role:roles){
     connectedRolesMap.delete(role);
 }
@@ -68,7 +65,6 @@ const connectedRoles = {
 ,   getInfo:getInfo
 ,   save: save
 ,   delete: del
-,   noMoreRelevantRoles: noMoreRelevantRoles
 ,   showConnectedRoles: showConnectedRoles
 }
 
@@ -80,22 +76,21 @@ async function sleep(ms:number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-//
-// generieke start functie
+// generic start function
 export async function initialize(roleName:roles, port:number, host:string){
    receiveMessageServer.start(port);
    connectedRoles.save(roleName,host,port);
    await sendMessage( roleName, roles.mediator, new ROLEMESSAGE(roleName) );
    while ( true ) {
-       let msg = await waitForMessage();
+       const msg = await messageDB.remove((m)=>m.name===ROLEMESSAGE.name);
        if ( msg.name === ROLEMESSAGE.name) {
            connectedRoles.save(msg);
        };
-       if ( msg.name === READY.name) {
+       const missingRoles = Object.values(roles).filter( (role) => connectedRoles.missing(role) );
+       if ( missingRoles.length === 0){
            break;
        }
    }
-   await sleep(1000);
 }
 
 //

@@ -4,13 +4,13 @@ import {ADD,BYE} from './Message';
 async function protocol(s1:Alice_Start):Promise<Alice_End> {
    for(let i=0;i<8;i++) {
       const add = new ADD(Math.floor(Math.random() * 8),Math.floor(Math.random() * 8));
-      const s2 = await s1.sendADD(add);
+      const s2 = await s1.send_ADD_to_Bob(add);
       s1 = await s2.recv();
       const res=s1.message?s1.message.sum:'empty';
       console.log(`${s1.messageFrom} stuurde ${s1.messageType} met waarde van ${res}`);
    }
    const bye=new BYE();
-   const done=s1.sendBYE(bye);
+   const done=s1.send_BYE_to_Bob(bye);
    return new Promise( resolve => resolve( done ) );
 }
 
