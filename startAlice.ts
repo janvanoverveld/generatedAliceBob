@@ -1,16 +1,17 @@
 import {Alice_Start,Alice_End,executeProtocol} from './Alice';
 import {ADD,BYE} from './Message';
 
+const value: ()=>number = ()=>Math.floor(Math.random() * 5);
+
 async function protocol(s1:Alice_Start):Promise<Alice_End> {
-   for(let i=0;i<8;i++) {
-      const add = new ADD(Math.floor(Math.random() * 8),Math.floor(Math.random() * 8));
+   for(let i=0;i<5;i++) {
+      const add = new ADD(value(),value());
       const s2 = await s1.send_ADD_to_Bob(add);
       s1 = await s2.recv();
-      const res=s1.message?s1.message.sum:'empty';
-      console.log(`${s1.messageFrom} stuurde ${s1.messageType} met waarde van ${res}`);
+      if (s1.message)
+        console.log(`Send an ${add.name} to ${s1.messageFrom} with values ${add.value1} and ${add.value2}, received a ${s1.messageType} with ${s1.message.sum}`);
    }
-   const bye=new BYE();
-   const done=s1.send_BYE_to_Bob(bye);
+   const done=s1.send_BYE_to_Bob(new BYE());
    return new Promise( resolve => resolve( done ) );
 }
 

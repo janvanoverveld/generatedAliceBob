@@ -4,19 +4,17 @@ import {RES} from './Message';
 async function protocol(s1:Bob_Start):Promise<Bob_End> {
    let nextState = await s1.recv();
    while ( true ){
-      console.log(`message ${nextState.messageType} received from ${nextState.messageFrom}`);
       switch (nextState.messageType) {
          case messages.ADD: {
             const res = new RES( nextState.message.value1 + nextState.message.value2 );
-            console.log(`send ${res.name} with ${res.sum}`);
             s1 = await nextState.send_RES_to_Alice(res);
+            console.log(`An ${nextState.messageType} received with ${nextState.message.value1} and ${nextState.message.value2}, send a RES with ${res.sum} back`);
             nextState = await s1.recv();
             break;
          }
          case messages.BYE:{
-            return new Promise(
-               resolve => resolve(<Bob_End>nextState)
-            );
+            const done = nextState;
+            return new Promise( resolve => resolve(done) );
          }
       }
    }
